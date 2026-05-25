@@ -1,4 +1,3 @@
-import { effect } from "./effect";
-import { reactive } from "./reactive";
-
-export {effect, reactive}
+export * from "./effect";
+export * from "./reactive";
+export * from "./ref"
