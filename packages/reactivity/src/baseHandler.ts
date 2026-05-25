@@ -1,4 +1,6 @@
+import { isObject } from "@zvue/shared";
 import { activeEffect } from "./effect";
+import { reactive } from "./reactive";
 import { track, trigger } from "./reactiveEffect";
 
 // TypeScript 的枚举（Enum）
@@ -23,7 +25,12 @@ export const mutableHandlers: ProxyHandler<any> = {
         // TODO 依赖收集
         // console.log(activeEffect) // 当前激活的effect函数
         track(target, key);  // 收集对象上的属性，和effect关联起来
-        return Reflect.get(target, key, receiver);
+        let res = Reflect.get(target, key, receiver)
+        if (isObject(res)) { 
+            // 如果属性的值是一个对象，则进行递归代理
+            return reactive(res);
+        }
+        return res;
     },
     set(target, key, value, receiver){
         // 让对应的effect重新执行（更新视图)

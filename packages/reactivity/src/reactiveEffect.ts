@@ -43,7 +43,7 @@ export function track(target: any, key: any) {
     }
 }
 
-// 赋值时chufa依赖更新，判断是否需要更新视图，寻找正确的effect
+// 赋值时触发依赖更新，判断是否需要更新视图，寻找正确的effect
 export function trigger(target: any, key: any, value: any, oldValue: any) { 
     // 在依赖映射表中寻找有没有响应式属性的依赖
     const depsMap = targetMap.get(target);

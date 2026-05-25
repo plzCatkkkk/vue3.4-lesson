@@ -8,6 +8,15 @@ export function effect(fn: Function, options?: Object) {
 
     // 默认执行一次
     _effect.run();
+
+    if(options) {
+        Object.assign(_effect, options); //用用户传递的配置项覆盖默认配置项
+    }
+
+    const runner: any = _effect.run.bind(_effect);
+    runner.effect = _effect;
+
+    return runner;  //外部可以自己让其重新run
 }
 
 // 自动声明类属性：不需要在类体中单独声明 fn 和 scheduler
@@ -47,6 +56,7 @@ class ReactiveEffect {
     _trackId = 0; // 用于记录当前effect执行了几次
     deps = []; // 记录effect依赖的属性
     _depsLength = 0;  //_depsLength 不是"计数器"，而是"下一个要写入的位置索引"
+    _running = 0; //运行状态
     // effectScope.stop() //停止所有effect不参与响应式处理
     public active = true;  // 创建的effect是响应式的
     // 如果fn中的依赖项发生变化，需要重新调用run
@@ -64,8 +74,10 @@ class ReactiveEffect {
             // TODO effect重新执行前，需要将上一次的依赖情况effect.deps清空
             // 比如通过effect多次访问同个依赖，减少多余收集
             preCleanEffect(this)
+            this._running++;
             return this.fn();    //依赖收集  -> state.name, state.age -> 只要取值就会命中handler的get
         } finally {
+            this._running--;
             postCleanEffect(this)
             effectStack.pop();
             activeEffect = effectStack[effectStack.length - 1];
@@ -123,14 +135,17 @@ export function trackEffect(effect: any, dep: any) {
 export function triggerEffects(deps: any) {
     // 遍历每一个effect
     for(const effect of deps.keys()) { 
-        if(effect.scheduler) { 
-        // 触发effect
-        // 为什么不直接用effect.run()?
-        // 核心原因：调度器（Scheduler）提供了更灵活的控制机制
-        // 解耦触发和执行时机:
-        // scheduler 是一个可选的回调函数，它允许你自定义 effect 何时以及如何执行
-        // 如果直接调用 run()，就失去了这种灵活性
-            effect.scheduler();  // effect.run()
+        if(!effect._running) {
+            if(effect.scheduler) {  
+                // 触发effect
+                // 为什么不直接用effect.run()?
+                // 核心原因：调度器（Scheduler）提供了更灵活的控制机制
+                // 解耦触发和执行时机:
+                // scheduler 是一个可选的回调函数，它允许你自定义 effect 何时以及如何执行
+                // 如果直接调用 run()，就失去了这种灵活性
+                effect.scheduler();  // effect.run()
+            }
         }
+       
     }
 }

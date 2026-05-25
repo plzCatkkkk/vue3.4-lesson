@@ -4,6 +4,12 @@ function effect(fn, options) {
     _effect.run();
   });
   _effect.run();
+  if (options) {
+    Object.assign(_effect, options);
+  }
+  const runner = _effect.run.bind(_effect);
+  runner.effect = _effect;
+  return runner;
 }
 var activeEffect;
 var effectStack = [];
@@ -30,6 +36,8 @@ var ReactiveEffect = class {
     // 记录effect依赖的属性
     this._depsLength = 0;
     //_depsLength 不是"计数器"，而是"下一个要写入的位置索引"
+    this._running = 0;
+    //运行状态
     // effectScope.stop() //停止所有effect不参与响应式处理
     this.active = true;
   }
@@ -41,8 +49,10 @@ var ReactiveEffect = class {
       effectStack.push(this);
       activeEffect = this;
       preCleanEffect(this);
+      this._running++;
       return this.fn();
     } finally {
+      this._running--;
       postCleanEffect(this);
       effectStack.pop();
       activeEffect = effectStack[effectStack.length - 1];
@@ -76,8 +86,10 @@ function trackEffect(effect2, dep) {
 }
 function triggerEffects(deps) {
   for (const effect2 of deps.keys()) {
-    if (effect2.scheduler) {
-      effect2.scheduler();
+    if (!effect2._running) {
+      if (effect2.scheduler) {
+        effect2.scheduler();
+      }
     }
   }
 }
@@ -129,7 +141,11 @@ var mutableHandlers = {
       return true;
     }
     track(target, key);
-    return Reflect.get(target, key, receiver);
+    let res = Reflect.get(target, key, receiver);
+    if (isObject(res)) {
+      return reactive(res);
+    }
+    return res;
   },
   set(target, key, value, receiver) {
     let oldValue = target[key];
