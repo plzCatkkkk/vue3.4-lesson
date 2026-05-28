@@ -34,7 +34,7 @@ export function track(target: any, key: any) {
         if (!dep) {  //新增的属性
             // 原先是Set储存effect，为了做清理改成map
             // TODO 这里还未了解清理的必要性
-            depsMap.set(key, createDep(()=> depsMap.delete(key), key));  //后面用于清理不需要的属性
+            depsMap.set(key, createDep(() => depsMap.delete(key), key));  //后面用于清理不需要的属性
             dep = depsMap.get(key);
         }
         trackEffect(activeEffect, dep)  // 将当前的effect放人到dep映射表中，后续可以根据值的变化触发此dep中存放的effect
@@ -44,15 +44,15 @@ export function track(target: any, key: any) {
 }
 
 // 赋值时触发依赖更新，判断是否需要更新视图，寻找正确的effect
-export function trigger(target: any, key: any, value: any, oldValue: any) { 
+export function trigger(target: any, key: any, value: any, oldValue: any) {
     // 在依赖映射表中寻找有没有响应式属性的依赖
     const depsMap = targetMap.get(target);
-    if(!depsMap) { 
+    if (!depsMap) {
         // 没有依赖映射
         return;
     }
     let deps = depsMap.get(key);
-    if(deps) { 
+    if (deps) {
         // 修改的属性有对应effect
         // 有多个effect需要依次去执行
         triggerEffects(deps);

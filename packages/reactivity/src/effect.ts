@@ -9,7 +9,7 @@ export function effect(fn: Function, options?: Object) {
     // 默认执行一次
     _effect.run();
 
-    if(options) {
+    if (options) {
         Object.assign(_effect, options); //用用户传递的配置项覆盖默认配置项
     }
 
@@ -44,10 +44,10 @@ function preCleanEffect(effect: any) {
 
 function postCleanEffect(effect: any) {
     // 删除过期依赖
-    if(effect.deps.length > effect._depsLength)
-    for (let i = effect._depsLength; i < effect.deps.length; i++) {
-        cleanDepEffect(effect.deps[i], effect) //删除映射表targetMap中对应的effect
-    }
+    if (effect.deps.length > effect._depsLength)
+        for (let i = effect._depsLength; i < effect.deps.length; i++) {
+            cleanDepEffect(effect.deps[i], effect) //删除映射表targetMap中对应的effect
+        }
     // 截断数组
     effect.deps.length = effect._depsLength;  //删除effect实例中多余的依赖
 }
@@ -90,9 +90,9 @@ class ReactiveEffect {
     }
 }
 
-function cleanDepEffect(dep:any, effect: any) { 
+function cleanDepEffect(dep: any, effect: any) {
     dep.delete(effect);
-    if(dep.size === 0) {
+    if (dep.size === 0) {
         dep.cleanup(); //如果map为空，则删除这个属性
     }
 }
@@ -108,7 +108,7 @@ export function trackEffect(effect: any, dep: any) {
     console.log(dep.get(effect), effect._trackId)
     // debugger;
     // 简易diff
-    if (dep.get(effect) !== effect._trackId){
+    if (dep.get(effect) !== effect._trackId) {
         dep.set(effect, effect._trackId) //更新id
         let oldDep = effect.deps[effect._depsLength]
         debugger;
@@ -134,9 +134,9 @@ export function trackEffect(effect: any, dep: any) {
 // 当更变的值需要更新视图，依次触发effect
 export function triggerEffects(deps: any) {
     // 遍历每一个effect
-    for(const effect of deps.keys()) { 
-        if(!effect._running) {
-            if(effect.scheduler) {  
+    for (const effect of deps.keys()) {
+        if (!effect._running) {
+            if (effect.scheduler) {
                 // 触发effect
                 // 为什么不直接用effect.run()?
                 // 核心原因：调度器（Scheduler）提供了更灵活的控制机制
@@ -146,6 +146,6 @@ export function triggerEffects(deps: any) {
                 effect.scheduler();  // effect.run()
             }
         }
-       
+
     }
 }

@@ -5,7 +5,7 @@ import { track, trigger } from "./reactiveEffect";
 
 // TypeScript 的枚举（Enum）
 export enum ReactiveFlags {
-  IS_REACTIVE = "__z_isReactive", //__z_isReactive是无意义的字符，只是为了区分，用symbol也可以
+    IS_REACTIVE = "__z_isReactive", //__z_isReactive是无意义的字符，只是为了区分，用symbol也可以
 }
 
 // Reflect 是一个静态工具对象，提供了一系列方法来操作对象。它的设计目的是：
@@ -15,9 +15,9 @@ export enum ReactiveFlags {
 
 export const mutableHandlers: ProxyHandler<any> = {
     // target:代理目标, key：属性, value：值, receiver：代理对象，返回出的东西
-    get(target, key, receiver){
+    get(target, key, receiver) {
         // 判定是否被代理过
-        if(key === ReactiveFlags.IS_REACTIVE) {
+        if (key === ReactiveFlags.IS_REACTIVE) {
             return true;
         }
         // Reflect可以让this 指向代理对象
@@ -26,13 +26,13 @@ export const mutableHandlers: ProxyHandler<any> = {
         // console.log(activeEffect) // 当前激活的effect函数
         track(target, key);  // 收集对象上的属性，和effect关联起来
         let res = Reflect.get(target, key, receiver)
-        if (isObject(res)) { 
+        if (isObject(res)) {
             // 如果属性的值是一个对象，则进行递归代理
             return reactive(res);
         }
         return res;
     },
-    set(target, key, value, receiver){
+    set(target, key, value, receiver) {
         // 让对应的effect重新执行（更新视图)
         let oldValue = target[key];
         let result = Reflect.set(target, key, value, receiver);

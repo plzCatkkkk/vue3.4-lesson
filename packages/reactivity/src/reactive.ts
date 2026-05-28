@@ -15,18 +15,18 @@ import { mutableHandlers, ReactiveFlags } from "./baseHandler"
 //    - delete(key) - 删除键值对
 const reactiveMap = new WeakMap();
 
-function createReactiveObject(target: any){
+function createReactiveObject(target: any) {
     // 统一做判断，响应式对象必须是对象
-     if(!isObject(target)){
+    if (!isObject(target)) {
         return target;
     }
     // 判断是否被代理过
-    if(target[ReactiveFlags.IS_REACTIVE]){ 
+    if (target[ReactiveFlags.IS_REACTIVE]) {
         return target;
     }
     // 确认是否有缓存
     const exitsProxy = reactiveMap.get(target);
-    if(exitsProxy){
+    if (exitsProxy) {
         return exitsProxy;
     }
     // 用Proxy包装对象
@@ -36,7 +36,7 @@ function createReactiveObject(target: any){
     return proxy;
 }
 
-export function reactive(target: any){
+export function reactive(target: any) {
     return createReactiveObject(target);
 }
 

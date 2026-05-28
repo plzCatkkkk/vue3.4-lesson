@@ -14,10 +14,12 @@
 -->
     <script type="module">
         // import { reactive, effect } from "/node_modules/@vue/reactivity/dist/reactivity.esm-browser.js"
-        import { reactive, effect } from "./reactivity.js"
+        import { reactive, effect, toRef, ref } from "./reactivity.js"
         let obj = { name: 'plz', age: 22, flag: true };
         // 静态对象转响应式对象
         const state1 = reactive(obj);
+        const name = toRef(state1, "name");
+        console.log(name,name.value);
         // 代理后数据再代理，此时state1已有get和set，所以可以在get中添加访问逻辑，做区分的同时不污染原数据
         // const state2 = reactive(state1);
         // effect(() => {
@@ -37,9 +39,9 @@
         //         state1.name = '张三';
         //     }, 1000);
         // }, 1000);
-           effect(() => {
-            app.innerHTML = state1.flag + state1.flag + state1.flag + state1.name+ state1.age;
-        });
+        //    effect(() => {
+        //     app.innerHTML = state1.flag + state1.flag + state1.flag + state1.name+ state1.age;
+        // });
         //   setTimeout(() => {
         //     state1.flag = false;}, 1000)
     </script>
