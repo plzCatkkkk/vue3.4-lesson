@@ -1,5 +1,6 @@
 import { isObject } from "@zvue/shared"
-import { mutableHandlers, ReactiveFlags } from "./baseHandler"
+import { mutableHandlers } from "./baseHandler"
+import { ReactiveFlags } from "./constans";
 
 // reactive / shallowReactive
 

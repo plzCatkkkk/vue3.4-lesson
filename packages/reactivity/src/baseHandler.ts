@@ -2,11 +2,7 @@ import { isObject } from "@zvue/shared";
 import { activeEffect } from "./effect";
 import { reactive } from "./reactive";
 import { track, trigger } from "./reactiveEffect";
-
-// TypeScript 的枚举（Enum）
-export enum ReactiveFlags {
-    IS_REACTIVE = "__z_isReactive", //__z_isReactive是无意义的字符，只是为了区分，用symbol也可以
-}
+import { ReactiveFlags } from "./constans";
 
 // Reflect 是一个静态工具对象，提供了一系列方法来操作对象。它的设计目的是：
 // 1.将 Object 的一些内部方法标准化
@@ -44,3 +40,4 @@ export const mutableHandlers: ProxyHandler<any> = {
         return result;
     }
 }
+
