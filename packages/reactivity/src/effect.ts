@@ -54,6 +54,7 @@ function postCleanEffect(effect: any) {
     effect.deps.length = effect._depsLength;  //删除effect实例中多余的依赖
 }
 
+// ReactiveEffect是响应式数据的依赖
 export class ReactiveEffect {
     _trackId = 0; // 用于记录当前effect执行了几次
     deps = []; // 记录effect依赖的属性
