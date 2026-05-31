@@ -67,11 +67,23 @@ function doWatch(source: any, cb: any, options = { deep: true, immediate: false 
     }
 
     let oldValue: any;
+    let clean: any;
+    const onCleanup = (fn: any) => {
+        clean = () => {
+            fn();
+            clean = undefined;
+        }
+    };
     const job = () => {
         if (cb) {
+            // 先执行 effect.run() 获取新值
             const newValue = effect.run();
-            cb(newValue, oldValue);
-            oldValue = newValue;
+            // 执行回调前先调用上一次的清理函数
+            if (clean) clean();
+            // 调用回调，传入新值和旧值
+            cb(newValue, oldValue, onCleanup);
+            // 更新旧值为新值（注意：对于对象需要深拷贝，否则引用相同）
+            oldValue = isObject(newValue) ? JSON.parse(JSON.stringify(newValue)) : newValue;
         } else {
             effect.run();
         }
@@ -87,4 +99,9 @@ function doWatch(source: any, cb: any, options = { deep: true, immediate: false 
         // watchEffect
         effect.run(); //直接执行即可
     }
+    // 原来watch还会返回一个函数，可以停止监听
+    const unwatch = () => {
+        effect.stop();
+    }
+    return unwatch;
 }

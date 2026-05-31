@@ -19,6 +19,6 @@
         ]
     },
     "dependencies": {
-        "@zvue/shared": "workspace:^"
+        "@zvue/shared": "workspace:*"
     }
 }

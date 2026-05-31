@@ -99,8 +99,14 @@ export class ReactiveEffect {
         }
 
     }
-    // TODO 停止响应
+    // TODO 停止响应 watch中有应用
     stop() {
+        if (this.active) {
+            this.active = false;
+            // 回归初始值
+            preCleanEffect(this);
+            postCleanEffect(this);
+        }
     }
 }
 
@@ -125,7 +131,6 @@ export function trackEffect(effect: any, dep: any) {
     if (dep.get(effect) !== effect._trackId) {
         dep.set(effect, effect._trackId) //更新id
         let oldDep = effect.deps[effect._depsLength]
-        debugger;
         // 如果没有存过
         if (oldDep !== dep) {
             if (oldDep) {
