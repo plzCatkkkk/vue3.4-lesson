@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <div id="app"></div>
+    <script type="module">
+        import { createRenderer, render, h} from "/node_modules/@vue/runtime-dom/dist/runtime-dom.esm-browser.js";
+        // createRender是创建渲染器的函数
+        // render是一个已经配置好的渲染器
+        // h方法可以创建一个虚拟dom(type, propsOrChildren, children)
+        let el = h('h1', 'hello world')
+        console.log(el)  //返回一个对象也就是虚拟dom，再通过render变成真实dom
+        render(el, document.querySelector('#app'))
+        // runtime-dom -> runtime-core ->reactivity
+        // render相关在runtime-dom中，其他在runtime-core中
+    </script>
+</body>
+</html>

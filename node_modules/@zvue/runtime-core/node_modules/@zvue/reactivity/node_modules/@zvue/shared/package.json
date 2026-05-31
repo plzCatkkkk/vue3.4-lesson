@@ -1,0 +1,21 @@
+{
+    "name": "@zvue/shared",
+    "version": "1.0.0",
+    "main": "dist/shared.cjs.js",
+    "module": "dist/shared.esm-bundler.js",
+    "unpkg": "dist/shared.global.js",
+    "types": "dist/shared.d.ts",
+    "files": [
+        "index.js",
+        "dist"
+    ],
+    "buildOptions": {
+        "name": "VueShared",
+        "formats": [
+            "esm-bundler",
+            "esm-browser",
+            "cjs",
+            "global"
+        ]
+    }
+}

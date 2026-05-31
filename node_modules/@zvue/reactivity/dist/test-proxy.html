@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Proxy 修改验证</title>
+</head>
+<body>
+    <script type="module">
+        // 原始对象
+        const target = {
+            name: '原始值',
+            age: 22
+        };
+
+        console.log('=== 初始状态 ===');
+        console.log('target.name:', target.name); // '原始值'
+
+        // 创建代理
+        const proxy = new Proxy(target, {
+            get(t, key, receiver) {
+                console.log(`[GET] 访问属性: ${String(key)}`);
+                return Reflect.get(t, key, receiver);
+            },
+            set(t, key, value, receiver) {
+                console.log(`[SET] 设置属性: ${String(key)} = ${value}`);
+                const result = Reflect.set(t, key, value, receiver);
+                console.log(`  → target.${String(key)} 现在是:`, t[key]);
+                return result;
+            }
+        });
+
+        console.log('\n=== 修改代理对象的属性 ===');
+        proxy.name = '修改后的值';
+
+        console.log('\n=== 最终状态对比 ===');
+        console.log('proxy.name:', proxy.name);
+        console.log('target.name:', target.name);
+        console.log('两者是否相同:', proxy.name === target.name);
+
+        console.log('\n=== 关键结论 ===');
+        console.log('✅ 修改 proxy.name 后，target.name 也会改变！');
+        console.log('   因为 Reflect.set(target, key, value, receiver)');
+        console.log('   实际上是直接修改了 target 对象本身');
+        console.log('   Proxy 只是拦截操作，不创建副本');
+    </script>
+</body>
+</html>

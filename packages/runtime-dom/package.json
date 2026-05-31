@@ -1,0 +1,26 @@
+{
+    "name": "@zvue/runtime-dom",
+    "version": "1.0.0",
+    "main": "dist/runtime-dom.cjs.js",
+    "module": "dist/runtime-dom.esm-bundler.js",
+    "unpkg": "dist/runtime-dom.global.js",
+    "types": "dist/runtime-dom.d.ts",
+    "files": [
+        "index.js",
+        "dist"
+    ],
+    "buildOptions": {
+        "name": "RuntimeDom",
+        "formats": [
+            "esm-bundler",
+            "esm-browser",
+            "cjs",
+            "global"
+        ]
+    },
+    "dependencies": {
+        "@zvue/reactivity": "workspace:*",
+        "@zvue/runtime-core": "workspace:*",
+        "@zvue/shared": "workspace:*"
+    }
+}

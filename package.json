@@ -7,12 +7,16 @@
   "main": "index.js",
   "scripts": {
     "dev": "node scripts/dev.js reactivity -f esm",
-    "runtime-dom": "node scripts/dev.js runtime-dom -f esm"
+    "runtime-dom": "node scripts/dev.js runtime-dom -f esm",
+    "runtime-core": "node scripts/dev.js runtime-core -f esm"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@zvue/reactivity": "workspace:^",
+    "@zvue/runtime-core": "workspace:^",
+    "@zvue/shared": "workspace:^",
     "vue": "^3.4.38"
   },
   "devDependencies": {

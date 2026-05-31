@@ -8,6 +8,15 @@ importers:
 
   .:
     dependencies:
+      '@zvue/reactivity':
+        specifier: workspace:^
+        version: link:packages/reactivity
+      '@zvue/runtime-core':
+        specifier: workspace:^
+        version: link:packages/runtime-core
+      '@zvue/shared':
+        specifier: workspace:^
+        version: link:packages/shared
       vue:
         specifier: ^3.4.38
         version: 3.4.38(typescript@5.4.5)
@@ -25,7 +34,28 @@ importers:
   packages/reactivity:
     dependencies:
       '@zvue/shared':
+        specifier: workspace:*
+        version: link:../shared
+
+  packages/runtime-core:
+    dependencies:
+      '@zvue/reactivity':
         specifier: workspace:^
+        version: link:../reactivity
+      '@zvue/shared':
+        specifier: workspace:^
+        version: link:../shared
+
+  packages/runtime-dom:
+    dependencies:
+      '@zvue/reactivity':
+        specifier: workspace:*
+        version: link:../reactivity
+      '@zvue/runtime-core':
+        specifier: workspace:*
+        version: link:../runtime-core
+      '@zvue/shared':
+        specifier: workspace:*
         version: link:../shared
 
   packages/shared: {}
