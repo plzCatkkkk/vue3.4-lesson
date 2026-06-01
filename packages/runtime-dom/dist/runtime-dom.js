@@ -1,3 +1,82 @@
+// packages/shared/src/shapeFlags.ts
+var ShapeFlags = /* @__PURE__ */ ((ShapeFlags2) => {
+  ShapeFlags2[ShapeFlags2["ELEMENT"] = 1] = "ELEMENT";
+  ShapeFlags2[ShapeFlags2["FUNCTIONAL_COMPONENT"] = 2] = "FUNCTIONAL_COMPONENT";
+  ShapeFlags2[ShapeFlags2["STATEFUL_COMPONENT"] = 4] = "STATEFUL_COMPONENT";
+  ShapeFlags2[ShapeFlags2["TEXT_CHILDREN"] = 8] = "TEXT_CHILDREN";
+  ShapeFlags2[ShapeFlags2["ARRAY_CHILDREN"] = 16] = "ARRAY_CHILDREN";
+  ShapeFlags2[ShapeFlags2["SLOTS_CHILDREN"] = 32] = "SLOTS_CHILDREN";
+  ShapeFlags2[ShapeFlags2["TELEPORT"] = 64] = "TELEPORT";
+  ShapeFlags2[ShapeFlags2["SUSPENSE"] = 128] = "SUSPENSE";
+  ShapeFlags2[ShapeFlags2["COMPONENT_SHOULD_KEEP_ALIVE"] = 256] = "COMPONENT_SHOULD_KEEP_ALIVE";
+  ShapeFlags2[ShapeFlags2["COMPONENT_KEPT_ALIVE"] = 512] = "COMPONENT_KEPT_ALIVE";
+  ShapeFlags2[ShapeFlags2["COMPONENT"] = 6] = "COMPONENT";
+  return ShapeFlags2;
+})(ShapeFlags || {});
+
+// packages/shared/src/index.ts
+function isObject(value) {
+  return value !== null && typeof value === "object";
+}
+function isFunction(fn) {
+  return typeof fn === "function";
+}
+
+// packages/runtime-core/src/index.ts
+function createRenderer(renderOptions2) {
+  const {
+    // 元素操作
+    insert: hostInsert,
+    remove: hostRemove,
+    // 创建元素
+    createElement: hostCreateElement,
+    createText: hostCreateText,
+    // 创建文本
+    setText: hostSetText,
+    setElementText: hostSetElementText,
+    // 元素关系
+    parentNode: hostParentNode,
+    nextSibling: hostNextSibling,
+    patchProp: hostPatchProp
+  } = renderOptions2;
+  const mountChildren = (children, container) => {
+    for (let i = 0; i < children.length; i++) {
+      patch(null, children[i], container);
+    }
+  };
+  const mountElement = (vnode, container) => {
+    const { type, props, children, shapeFlag } = vnode;
+    const el = hostCreateElement(type);
+    if (props) {
+      for (let key in props) {
+        hostPatchProp(el, key, null, props[key]);
+      }
+    }
+    if (shapeFlag & 8 /* TEXT_CHILDREN */) {
+      hostSetElementText(el, children);
+    } else if (shapeFlag & 16 /* ARRAY_CHILDREN */) {
+      mountChildren(children, el);
+    }
+    hostInsert(el, container);
+  };
+  const patch = (n1, n2, container) => {
+    if (n1 === n2) {
+      return;
+    }
+    if (n1 === null) {
+      mountElement(n2, container);
+    }
+  };
+  const render2 = (vnode, container) => {
+    console.log(vnode, container);
+    patch(container._vnode || null, vnode, container);
+    container._vnode = vnode;
+  };
+  return {
+    render: render2
+  };
+}
+
 // packages/runtime-dom/src/nodeOps.ts
 var nodeOps = {
   // 插入dom元素,anchor为null时，插入到末尾
@@ -205,14 +284,6 @@ function triggerEffects(deps) {
       }
     }
   }
-}
-
-// packages/shared/src/index.ts
-function isObject(value) {
-  return value !== null && typeof value === "object";
-}
-function isFunction(fn) {
-  return typeof fn === "function";
 }
 
 // packages/reactivity/src/reactiveEffect.ts
@@ -495,9 +566,13 @@ function doWatch(source, cb, options = { deep: true, immediate: false }) {
 
 // packages/runtime-dom/src/index.ts
 var renderOptions = Object.assign(nodeOps, { patchProp });
+function render(vnode, container) {
+  return createRenderer(renderOptions).render(vnode, container);
+}
 export {
   ReactiveEffect,
   RefImpl,
+  ShapeFlags,
   activeEffect,
   computed,
   effect,
@@ -508,6 +583,7 @@ export {
   proxyRefs,
   reactive,
   ref,
+  render,
   renderOptions,
   toReactive,
   toRef,

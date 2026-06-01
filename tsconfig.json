@@ -12,7 +12,8 @@
     "lib": ["esnext", "dom"],                            /* 指定一组 bundled 库声明文件，描述目标运行时环境。 */
     "baseUrl": ".",
     "paths": { 
-      "@zvue/*": ["packages/*/src"]
+      "@zvue/*": ["packages/*/src"],
+      "@node_modules/*": ["node_modules/*"]
     },
 
     /* 访问 https://aka.ms/tsconfig 以阅读有关此文件的更多信息 */
