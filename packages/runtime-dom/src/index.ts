@@ -2,6 +2,7 @@ import { createRenderer } from "@zvue/runtime-core";
 import { nodeOps } from "./nodeOps";
 import patchProp from "./patchProp";
 
+export * from "@zvue/runtime-core"
 export * from "@zvue/reactivity";
 export * from "@zvue/shared";
 

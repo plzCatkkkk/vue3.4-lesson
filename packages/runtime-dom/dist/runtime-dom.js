@@ -21,8 +21,43 @@ function isObject(value) {
 function isFunction(fn) {
   return typeof fn === "function";
 }
+function isArray(value) {
+  return Array.isArray(value);
+}
+function isString(value) {
+  return typeof value === "string";
+}
 
-// packages/runtime-core/src/index.ts
+// packages/runtime-core/src/createVnode.ts
+function createVnode(type, props, children) {
+  const shapeFlag = isString(type) ? 1 /* ELEMENT */ : 0;
+  const vnode = {
+    __v_isVnode: true,
+    type,
+    props,
+    children,
+    key: props?.key,
+    // diff算法需要用的key
+    el: null,
+    // 对应的真实节点
+    shapeFlag
+    // 标识位
+  };
+  if (children) {
+    if (isArray(children)) {
+      vnode.shapeFlag |= 16 /* ARRAY_CHILDREN */;
+    } else {
+      children = String(children);
+      vnode.shapeFlag |= 8 /* TEXT_CHILDREN */;
+    }
+  }
+  return vnode;
+}
+function isVnode(value) {
+  return value.__v_isVnode;
+}
+
+// packages/runtime-core/src/createRenderer.ts
 function createRenderer(renderOptions2) {
   const {
     // 元素操作
@@ -68,13 +103,35 @@ function createRenderer(renderOptions2) {
     }
   };
   const render2 = (vnode, container) => {
-    console.log(vnode, container);
     patch(container._vnode || null, vnode, container);
     container._vnode = vnode;
   };
   return {
     render: render2
   };
+}
+
+// packages/runtime-core/src/h.ts
+function h(type, propsOrChildren, children) {
+  let l = arguments.length;
+  if (l === 2) {
+    if (isObject(propsOrChildren) && !isArray(propsOrChildren)) {
+      if (isVnode(propsOrChildren)) {
+        return createVnode(type, null, [propsOrChildren]);
+      } else {
+        return createVnode(type, propsOrChildren, null);
+      }
+    }
+    return createVnode(type, null, propsOrChildren);
+  } else {
+    if (l > 3) {
+      children = Array.prototype.slice.call(arguments, 2);
+    }
+    if (l === 3 && isVnode(children)) {
+      children = [children];
+    }
+    return createVnode(type, propsOrChildren, children);
+  }
 }
 
 // packages/runtime-dom/src/nodeOps.ts
@@ -575,11 +632,17 @@ export {
   ShapeFlags,
   activeEffect,
   computed,
+  createRenderer,
+  createVnode,
   effect,
+  h,
+  isArray,
   isFunction,
   isObject,
   isReactive,
   isRef,
+  isString,
+  isVnode,
   proxyRefs,
   reactive,
   ref,

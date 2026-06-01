@@ -9,7 +9,8 @@
     <div id="app"></div>
     <script type="module">
         import {h} from "/node_modules/@vue/runtime-dom/dist/runtime-dom.esm-browser.js";
-        import {render} from "./runtime-dom.js"
+        import {render, h as zh} from "./runtime-dom.js"
+
         // createRender是创建渲染器的函数
         // render是一个已经配置好的渲染器
         // h方法可以创建一个虚拟dom(type, propsOrChildren, children)
@@ -19,18 +20,18 @@
         // runtime-dom -> runtime-core ->reactivity
         // render相关在runtime-dom中，其他在runtime-core中
 
-        let ele1 = h(
-            "h1",
-            {
-                style: {    color: "red"}
-            },
-            "hello world"
-        )
-         ele1 = h(
+        // let ele1 = h(
+        //     "h1",
+        //     {
+        //         style: {    color: "red"}
+        //     },
+        //     "hello world"
+        // )
+        let ele1 = zh(
             "h1",
             [h("span", "hello"), h("span", "world")]
         )
-        console.log(render)
+        console.log('111', ele1)
         render(ele1, document.querySelector('#app'))
     </script>
 </body>
