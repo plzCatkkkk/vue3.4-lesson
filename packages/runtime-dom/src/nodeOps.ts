@@ -7,7 +7,7 @@ export const nodeOps = {
     // 移除dom元素
     remove(el: any) {
         const parent = el.parentNode;
-        parent || parent.removeChild(el);
+        parent && parent.removeChild(el);
     },
     // 创建dom元素
     createElement: (type: string) => document.createElement(type),

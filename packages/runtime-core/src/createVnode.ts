@@ -29,3 +29,8 @@ export function createVnode(type: any, props: any, children: any) {
 export function isVnode(value: any) {
     return value.__v_isVnode;
 }
+
+export function isSameVnode(n1: any, n2: any) {
+    // 通过类型和key去判断
+    return n1.type === n2.type && n1.key === n2.key;
+}
