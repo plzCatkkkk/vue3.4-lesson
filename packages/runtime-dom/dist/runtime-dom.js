@@ -29,6 +29,7 @@ function isString(value) {
 }
 
 // packages/runtime-core/src/createVnode.ts
+var Text = Symbol("Text");
 function createVnode(type, props, children) {
   const shapeFlag = isString(type) ? 1 /* ELEMENT */ : 0;
   const vnode = {
@@ -274,6 +275,23 @@ function createRenderer(renderOptions2) {
     patchProps(oldProps, newProps, el);
     patchChildren(n1, n2, el);
   };
+  const processElement = (n1, n2, container, anchror = null) => {
+    if (n1 === null) {
+      mountElement(n2, container, anchror);
+    } else {
+      patchElement(n1, n2, container);
+    }
+  };
+  const processText = (n1, n2, container) => {
+    if (n1 === null) {
+      hostInsert(n2.el = hostCreateText(n2.children), container);
+    } else {
+      const el = n2.el = n1.el;
+      if (n1.children !== n2.children) {
+        hostSetText(el, n2.children);
+      }
+    }
+  };
   const patch = (n1, n2, container, anchror = null) => {
     if (n1 === n2) {
       return;
@@ -282,18 +300,22 @@ function createRenderer(renderOptions2) {
       unmount(n1);
       n1 = null;
     }
-    if (n1 === null) {
-      mountElement(n2, container, anchror);
-    } else {
-      patchElement(n1, n2, container);
+    const { type } = n2;
+    switch (type) {
+      case Text:
+        processText(n1, n2, container);
+        break;
+      default:
+        processElement(n1, n2, container);
     }
   };
   const render2 = (vnode, container) => {
     if (vnode === null) {
       unmount(container._vnode);
+    } else {
+      patch(container._vnode || null, vnode, container);
+      container._vnode = vnode;
     }
-    patch(container._vnode || null, vnode, container);
-    container._vnode = vnode;
   };
   return {
     render: render2
@@ -822,6 +844,7 @@ export {
   ReactiveEffect,
   RefImpl,
   ShapeFlags,
+  Text,
   activeEffect,
   computed,
   createRenderer,

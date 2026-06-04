@@ -1,5 +1,5 @@
 import { ShapeFlags } from "@zvue/shared";
-import { isSameVnode } from "./createVnode";
+import { Text, isSameVnode } from "./createVnode";
 import { getSequence } from "./getSequence";
 
 // 产生的render方法采用dom api进行渲染
@@ -248,6 +248,30 @@ export function createRenderer(renderOptions: any) {
         // 比较子元素差异
         patchChildren(n1, n2, el);
     }
+
+    const processElement = (n1: any, n2: any, container: any, anchror = null as any) => {
+        if (n1 === null) {
+            // 初始化程序
+            mountElement(n2, container, anchror);
+        } else {
+            // 比较节点差异
+            patchElement(n1, n2, container)
+        }
+    };
+    // 文本节点 - 可以被直接获取 web原生api
+    const processText = (n1: any, n2: any, container: any) => {
+        if (n1 === null) {
+            // 初始化程序
+            hostInsert(n2.el = hostCreateText(n2.children), container);
+        } else {
+            // 比较节点差异
+            const el = n2.el = n1.el;
+            if (n1.children !== n2.children) {
+                hostSetText(el, n2.children);
+            }
+        }
+    }
+
     // 渲染走这里，更新也走这里
     // n1: 旧节点
     // n2: 新节点
@@ -261,13 +285,15 @@ export function createRenderer(renderOptions: any) {
             unmount(n1);
             n1 = null; //就会执行初始化
         }
-        if (n1 === null) {
-            // 初始化程序
-            mountElement(n2, container, anchror);
-        } else {
-            // 比较节点差异
-            patchElement(n1, n2, container)
+        const { type } = n2;
+        switch (type) {
+            case Text:
+                processText(n1, n2, container);
+                break;
+            default:
+                processElement(n1, n2, container);
         }
+
 
     };
 
@@ -275,11 +301,12 @@ export function createRenderer(renderOptions: any) {
         if (vnode === null) {
             // 移除当前容器中的元素
             unmount(container._vnode);
+        } else {
+            // 将虚拟dom转换成真实dom渲染
+            patch(container._vnode || null, vnode, container);
+            // 储存虚拟dom
+            container._vnode = vnode;
         }
-        // 将虚拟dom转换成真实dom渲染
-        patch(container._vnode || null, vnode, container);
-        // 储存虚拟dom
-        container._vnode = vnode;
     };
     return {
         render

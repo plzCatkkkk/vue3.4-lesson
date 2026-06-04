@@ -1,5 +1,7 @@
 import { ShapeFlags, isArray, isString } from "@zvue/shared";
 
+export const Text = Symbol("Text");
+
 // 创建虚拟节点
 export function createVnode(type: any, props: any, children: any) {
     // TODO 需要做详细节点类型判断，这里先做demo

@@ -8,9 +8,9 @@
   <body>
     <div id="app"></div>
     <script type="module">
-      import { h } from "/node_modules/@vue/runtime-dom/dist/runtime-dom.esm-browser.js";
-      import { render, h as zh } from "./runtime-dom.js";
-
+      import { render, h, Text } from "/node_modules/@vue/runtime-dom/dist/runtime-dom.esm-browser.js";
+      import { render as zrender, h as zh } from "./runtime-dom.js";
+      const app = document.getElementById("app");
       // createRender是创建渲染器的函数
       // render是一个已经配置好的渲染器
       // h方法可以创建一个虚拟dom(type, propsOrChildren, children)
@@ -20,37 +20,7 @@
       // runtime-dom -> runtime-core ->reactivity
       // render相关在runtime-dom中，其他在runtime-core中
 
-      // let ele1 = h(
-      //     "h1",
-      //     {
-      //         style: {    color: "red"}
-      //     },
-      //     "hello world"
-      // )
-      let ele1 = zh("div", [
-        zh("div", { key: "a" }, "a"),
-        zh("div", { key: "b" }, "b"),
-        zh("div", { key: "c" }, "c"),
-        zh("div", { key: "d" }, "d"),
-        zh("div", { key: "e" }, "e"),
-        zh("div", { key: "f" }, "f"),
-        zh("div", { key: "g" }, "g"),
-      ]);
-      render(ele1, document.querySelector("#app"));
-
-      setTimeout(() => {
-        ele1 = zh("div", [
-          zh("div", { key: "a" }, "a"),
-          zh("div", { key: "b" }, "b"),
-          zh("div", { key: "e", style: {  color: "red" } }, "e"),
-          zh("div", { key: "c" }, "c"),
-          zh("div", { key: "d" }, "d"),
-          zh("div", { key: "h" }, "h"),
-          zh("div", { key: "f" }, "f"),
-          zh("div", { key: "g" }, "g"),
-        ]);
-        render(ele1, document.querySelector("#app"));
-      }, 1000);
+      render(h(Text, "plz"), app);
     </script>
   </body>
 </html>
