@@ -1,5 +1,5 @@
 import { ShapeFlags } from "@zvue/shared";
-import { Text, isSameVnode } from "./createVnode";
+import { Fragment, Text, isSameVnode } from "./createVnode";
 import { getSequence } from "./getSequence";
 
 // 产生的render方法采用dom api进行渲染
@@ -29,7 +29,12 @@ export function createRenderer(renderOptions: any) {
     };
 
     const unmount = (vnode: any) => {
-        hostRemove(vnode.el);
+        // Fragment仅卸载子节点
+        if (vnode.type === Fragment) {
+            unmountChildren(vnode.children);
+        } else {
+            hostRemove(vnode.el);
+        }
     };
     const unmountChildren = (children: any) => {
         for (let i = 0; i < children.length; i++) {
@@ -271,6 +276,15 @@ export function createRenderer(renderOptions: any) {
             }
         }
     }
+    const processFragment = (n1: any, n2: any, container: any) => {
+        if (n1 === null) {
+            // 初始化程序-直接放儿子
+            mountChildren(n2.children, container);
+        } else {
+            // 比较节点差异-只比较儿子
+            patchChildren(n1, n2, container)
+        }
+    };
 
     // 渲染走这里，更新也走这里
     // n1: 旧节点
@@ -289,6 +303,9 @@ export function createRenderer(renderOptions: any) {
         switch (type) {
             case Text:
                 processText(n1, n2, container);
+                break;
+            case Fragment:
+                processFragment(n1, n2, container); // 儿子只能传数组
                 break;
             default:
                 processElement(n1, n2, container);

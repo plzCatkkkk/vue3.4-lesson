@@ -30,6 +30,7 @@ function isString(value) {
 
 // packages/runtime-core/src/createVnode.ts
 var Text = Symbol("Text");
+var Fragment = Symbol("Fragment");
 function createVnode(type, props, children) {
   const shapeFlag = isString(type) ? 1 /* ELEMENT */ : 0;
   const vnode = {
@@ -127,7 +128,11 @@ function createRenderer(renderOptions2) {
     }
   };
   const unmount = (vnode) => {
-    hostRemove(vnode.el);
+    if (vnode.type === Fragment) {
+      unmountChildren(vnode.children);
+    } else {
+      hostRemove(vnode.el);
+    }
   };
   const unmountChildren = (children) => {
     for (let i = 0; i < children.length; i++) {
@@ -292,6 +297,13 @@ function createRenderer(renderOptions2) {
       }
     }
   };
+  const processFragment = (n1, n2, container) => {
+    if (n1 === null) {
+      mountChildren(n2.children, container);
+    } else {
+      patchChildren(n1, n2, container);
+    }
+  };
   const patch = (n1, n2, container, anchror = null) => {
     if (n1 === n2) {
       return;
@@ -304,6 +316,9 @@ function createRenderer(renderOptions2) {
     switch (type) {
       case Text:
         processText(n1, n2, container);
+        break;
+      case Fragment:
+        processFragment(n1, n2, container);
         break;
       default:
         processElement(n1, n2, container);
@@ -841,6 +856,7 @@ function render(vnode, container) {
   return createRenderer(renderOptions).render(vnode, container);
 }
 export {
+  Fragment,
   ReactiveEffect,
   RefImpl,
   ShapeFlags,

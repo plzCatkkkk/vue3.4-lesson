@@ -1,6 +1,9 @@
 import { ShapeFlags, isArray, isString } from "@zvue/shared";
 
+// 文本节点
 export const Text = Symbol("Text");
+// 把元素抱起来但是不会被渲染
+export const Fragment = Symbol("Fragment");
 
 // 创建虚拟节点
 export function createVnode(type: any, props: any, children: any) {
