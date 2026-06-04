@@ -1,6 +1,7 @@
 // 主要对节点元素的增删改查
 export const nodeOps = {
     // 插入dom元素,anchor为null时，插入到末尾
+    // 根据DOM规范，如果el原本就在parent里，不会造成重复，而是移动节点
     insert(el: any, parent: any, anchor: any) {
         parent.insertBefore(el, anchor || null);
     },

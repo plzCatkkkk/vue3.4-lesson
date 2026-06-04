@@ -1,5 +1,6 @@
 import { ShapeFlags } from "@zvue/shared";
 import { isSameVnode } from "./createVnode";
+import { getSequence } from "./getSequence";
 
 // 产生的render方法采用dom api进行渲染
 export function createRenderer(renderOptions: any) {
@@ -137,6 +138,11 @@ export function createRenderer(renderOptions: any) {
 
             // 做一个映射表用于快速查找，看老的是否在新的里面还有，没有就删除，有就更新
             const keyToNewIndexMap = new Map();
+
+            let toBePatched = e2 - s2 + 1; //要倒序插入的个数
+            let newIndexToOldMapIndex = new Array(toBePatched).fill(0); // 初始化数组
+
+            // 根据新的节点，找到对应老的位置
             for (let i = s2; i <= e2; i++) {
                 const vnode = c2[i];
                 keyToNewIndexMap.set(vnode.key, i); // 新索引
@@ -149,22 +155,36 @@ export function createRenderer(renderOptions: any) {
                     unmount(vnode);
                 } else {
                     // 更新元素的属性，样式，事件
+                    newIndexToOldMapIndex[newIndex - s2] = i + 1;  // 差异开始的索引
+                    // 为了避免0的歧义，将索引加1，如果是0就是没比对过的(找不到)
                     patch(vnode, c2[newIndex], el)
                 }
             }
+            // console.log(newIndexToOldMapIndex);
+            // [e, c, d, h] -> [5, 3, 4, 0] 新节点中第i个差异是旧节点中的索引
+            // 最长递增子序列算出来是 [3, 4] -> 需要用到的是对应的索引 [1, 2]
+            // 倒序插入，如果插入的新索引在[1, 2]中，不需要动 -> c d的索引在[1, 2]中，不需要动
+            let incereasingSeq = getSequence(newIndexToOldMapIndex);
+            // console.log(incereasingSeq);
+
+            let j = incereasingSeq.length - 1;
             // 对新的节点排序插入
-            let toBePatched = e2 - s2 + 1; //要倒序插入的个数
             for (let i = toBePatched - 1; i >= 0; i--) {
                 let newtIndex = s2 + i; // h 对应的索引，找他的下一个元素作为参照物，来进行插入
                 let anchor = c2[newtIndex + 1]?.el;  // 当前参照物 f
                 // console.log(c2[newtIndex]);
                 let vnode = c2[newtIndex];
-                debugger;
+                // debugger;
                 // 可能新的比老的多，需要额外创建
                 if (!vnode.el) {  // 新列表中新增的元素
                     patch(null, vnode, el, anchor);  //创建 h 插入
                 } else {
-                    hostInsert(vnode.el, el, anchor);
+                    if (i == incereasingSeq[j]) {
+                        // 有相同不做插入，换下一个来判断
+                        j--;
+                    } else {
+                        hostInsert(vnode.el, el, anchor);
+                    }
                 }
 
             }
