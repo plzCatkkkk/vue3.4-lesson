@@ -88,4 +88,4 @@ export function getSequence(arr: number[]) {
 }
 
 // 求数组对应的索引 - 子序列：1 3 4 6 8 9 -> 对应索引：2 1 8 4 6 7
-console.log(getSequence([2, 3, 1, 5, 6, 8, 7, 9, 4]))
+// console.log(getSequence([2, 3, 1, 5, 6, 8, 7, 9, 4]))

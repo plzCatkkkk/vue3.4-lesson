@@ -1,6 +1,7 @@
 import { ShapeFlags } from "@zvue/shared";
 import { Fragment, Text, isSameVnode } from "./createVnode";
 import { getSequence } from "./getSequence";
+import { ReactiveEffect, reactive } from "@zvue/reactivity";
 
 // 产生的render方法采用dom api进行渲染
 export function createRenderer(renderOptions: any) {
@@ -41,7 +42,7 @@ export function createRenderer(renderOptions: any) {
             unmount(children[i]);
         }
     };
-    const mountElement = (vnode: any, container: any, anchror: any) => {
+    const mountElement = (vnode: any, container: any, anchor: any) => {
         const { type, props, children, shapeFlag } = vnode;
         // 第一次渲染的时候让虚拟dom和真实dom关联起来
         // 第二次渲染新的时候可以和上一次vnode做比对，然后更新对应el元素，可以后续再复用这个dom
@@ -62,7 +63,7 @@ export function createRenderer(renderOptions: any) {
         } else if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
             mountChildren(children, el);
         }
-        hostInsert(el, container, anchror);
+        hostInsert(el, container, anchor);
     }
 
     const patchProps = (oldProps: any, newProps: any, el: any) => {
@@ -241,7 +242,7 @@ export function createRenderer(renderOptions: any) {
         }
     };
 
-    const patchElement = (n1: any, n2: any, container: any, anchror = null as any) => {
+    const patchElement = (n1: any, n2: any, container: any) => {
         // 1、比较元素的差异，肯定需要复用dom元素
         // 2、比较属性和元素的子节点
         let el = n2.el = n1.el; // 复用旧节点的el dom
@@ -254,10 +255,10 @@ export function createRenderer(renderOptions: any) {
         patchChildren(n1, n2, el);
     }
 
-    const processElement = (n1: any, n2: any, container: any, anchror = null as any) => {
+    const processElement = (n1: any, n2: any, container: any, anchor = null as any) => {
         if (n1 === null) {
             // 初始化程序
-            mountElement(n2, container, anchror);
+            mountElement(n2, container, anchor);
         } else {
             // 比较节点差异
             patchElement(n1, n2, container)
@@ -286,10 +287,58 @@ export function createRenderer(renderOptions: any) {
         }
     };
 
+    const mountComponent = (n2: any, container: any, anchor = null as any) => {
+        // 组件可以基于自己的状态重新渲染 => effect 所以里面要有一个effect
+        const {
+            data = () => { },
+            render
+        } = n2.type;
+        const state = reactive(data()) // 组件的状态
+        // 实例 - 用来判断是否已经初始化
+        const instance = {
+            state,
+            vnode: n2, // 虚拟节点
+            subTree: null as any, // 组件的子树
+            isMounted: false,  // 挂载状态
+            update: null as any // 更新函数
+        }
+        const componentUpdateFn = () => {
+            // 把this指向当前的state
+            // 传第一个用作绑定，传第二个作为显式参数传递给render函数,让 render 函数可以直接通过参数接收到状态对象
+            // TODO 需要判断是初始化还是更新，否则会一直插入节点
+            if (!instance.isMounted) {
+                const subTree = render.call(state, state)
+                instance.subTree = subTree
+                patch(null, subTree, container, anchor);
+                instance.isMounted = true
+            } else {
+                const subTree = render.call(state, state)
+                patch(instance.subTree, subTree, container, anchor);
+                instance.subTree = subTree
+            }
+        }
+        // ReactiveEffect创建effect并传入更新函数，再包装一层方便修改
+        const effect = new ReactiveEffect(componentUpdateFn, () => update())
+        // 更新函数
+        const update = (instance.update = () => {
+            effect.run()
+        })
+        update();
+    }
+
+    const processComponent = (n1: any, n2: any, container: any, anchor = null as any) => {
+        if (n1 === null) {
+            // 初始化挂载
+            mountComponent(n2, container, anchor);
+        } else {
+            // 更新
+        }
+    }
+
     // 渲染走这里，更新也走这里
     // n1: 旧节点
     // n2: 新节点
-    const patch = (n1: any, n2: any, container: any, anchror = null as any) => {
+    const patch = (n1: any, n2: any, container: any, anchor = null as any) => {
         // 没更新内容
         if (n1 === n2) {
             return
@@ -299,7 +348,7 @@ export function createRenderer(renderOptions: any) {
             unmount(n1);
             n1 = null; //就会执行初始化
         }
-        const { type } = n2;
+        const { type, shapeFlag } = n2;
         switch (type) {
             case Text:
                 processText(n1, n2, container);
@@ -308,7 +357,14 @@ export function createRenderer(renderOptions: any) {
                 processFragment(n1, n2, container); // 儿子只能传数组
                 break;
             default:
-                processElement(n1, n2, container);
+                if (shapeFlag & ShapeFlags.ELEMENT) {
+                    // 一般元素渲染
+                    processElement(n1, n2, container, anchor);
+                } else if (shapeFlag & ShapeFlags.COMPONENT) {
+                    // 组件渲染-包含有状态组件和函数式组件
+                    // Vue3中函数式组件因为性能不好基本废弃，只是为了对齐Vue2
+                    processComponent(n1, n2, container, anchor);
+                }
         }
 
 

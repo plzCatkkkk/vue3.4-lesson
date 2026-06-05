@@ -84,7 +84,7 @@ function cleanDepEffect(dep, effect2) {
   }
 }
 function trackEffect(effect2, dep) {
-  console.log(dep.get(effect2), effect2._trackId);
+  // console.log(dep.get(effect2), effect2._trackId);
   if (dep.get(effect2) !== effect2._trackId) {
     dep.set(effect2, effect2._trackId);
     let oldDep = effect2.deps[effect2._depsLength];

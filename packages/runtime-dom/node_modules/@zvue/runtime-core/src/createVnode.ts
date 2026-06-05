@@ -1,4 +1,4 @@
-import { ShapeFlags, isArray, isString } from "@zvue/shared";
+import { ShapeFlags, isArray, isString, isObject } from "@zvue/shared";
 
 // 文本节点
 export const Text = Symbol("Text");
@@ -8,7 +8,11 @@ export const Fragment = Symbol("Fragment");
 // 创建虚拟节点
 export function createVnode(type: any, props: any, children: any) {
     // TODO 需要做详细节点类型判断，这里先做demo
-    const shapeFlag = isString(type) ? ShapeFlags.ELEMENT : 0;
+    const shapeFlag = isString(type)
+        ? ShapeFlags.ELEMENT
+        : isObject(type)
+            ? ShapeFlags.STATEFUL_COMPONENT
+            : 0;
     const vnode = {
         __v_isVnode: true,
         type,

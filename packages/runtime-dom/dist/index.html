@@ -8,23 +8,33 @@
   <body>
     <div id="app"></div>
     <script type="module">
-      // import { render, h, Text } from "/node_modules/@vue/runtime-dom/dist/runtime-dom.esm-browser.js";
-      import { render as zrender, h as zh, Fragment } from "./runtime-dom.js";
-      const app = document.getElementById("app");
-      // createRender是创建渲染器的函数
-      // render是一个已经配置好的渲染器
-      // h方法可以创建一个虚拟dom(type, propsOrChildren, children)
-      // let el = h('h1', 'hello world')
-      //返回一个对象也就是虚拟dom，再通过render变成真实dom
-      // render(el, document.querySelector('#app'))
-      // runtime-dom -> runtime-core ->reactivity
-      // render相关在runtime-dom中，其他在runtime-core中
+      // import { render, h, Fragment } from "/node_modules/@vue/runtime-dom/dist/runtime-dom.esm-browser.js";
+      import { render, h, Fragment } from "./runtime-dom.js";
 
-      zrender(zh(Fragment, [zh("div", "hello"), zh("div", "plz")]), app);
-      setTimeout(() => {
-        zrender(zh(Fragment, [zh("div", "plz"), zh("div", "plz")]), app);
-        // zrender(null, app);
-      }, 1000)
+      const app = document.getElementById("app");
+      const VueComponent = {
+        data() {
+          return {
+            name: "plz",
+            age: 22,
+          };
+        },
+        render() {
+          // 模拟依赖更新
+          setTimeout(() => {
+            this.age++;
+          }, 1000);
+          // this == 组件的实例，内部不会通过类来产生实例
+          return h(Fragment,[
+            h("p", `name: ${this.name}`),
+            h("p", `age: ${this.age}`),
+          ]);
+        },
+      }
+      // 组件由两个虚拟节点组成 h(VueComponent) = vnode 产生的是组件内的虚拟节点
+      // render函数返回的虚拟节点，这个虚拟节点才是最终要渲染的内容 = sunTree
+      // 从实现上理解，如果h传如的是对象，那就是要渲染自定义组件
+      render(h(VueComponent), app);
     </script>
   </body>
 </html>
