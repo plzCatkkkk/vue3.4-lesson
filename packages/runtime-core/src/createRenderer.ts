@@ -2,6 +2,7 @@ import { ShapeFlags } from "@zvue/shared";
 import { Fragment, Text, isSameVnode } from "./createVnode";
 import { getSequence } from "./getSequence";
 import { ReactiveEffect, reactive } from "@zvue/reactivity";
+import { queueJob } from "./scheduler";
 
 // 产生的render方法采用dom api进行渲染
 export function createRenderer(renderOptions: any) {
@@ -317,12 +318,10 @@ export function createRenderer(renderOptions: any) {
                 instance.subTree = subTree
             }
         }
-        // ReactiveEffect创建effect并传入更新函数，再包装一层方便修改
-        const effect = new ReactiveEffect(componentUpdateFn, () => update())
         // 更新函数
-        const update = (instance.update = () => {
-            effect.run()
-        })
+        const update: Function = (instance.update = () => effect.run())
+        // ReactiveEffect创建effect并传入更新函数，再包装一层方便修改
+        const effect = new ReactiveEffect(componentUpdateFn, () => queueJob(update))
         update();
     }
 

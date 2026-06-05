@@ -494,6 +494,27 @@ function doWatch(source, cb, options = { deep: true, immediate: false }) {
   return unwatch;
 }
 
+// packages/runtime-core/src/scheduler.ts
+var queue = [];
+var isFlushing = false;
+var resolvePromise = Promise.resolve();
+function queueJob(job) {
+  if (!queue.includes(job)) {
+    queue.push(job);
+  }
+  if (!isFlushing) {
+    console.log("queueJob", job);
+    isFlushing = true;
+    resolvePromise.then(() => {
+      isFlushing = false;
+      const copy = queue.slice(0);
+      queue.length = 0;
+      copy.forEach((job2) => job2());
+      copy.length = 0;
+    });
+  }
+}
+
 // packages/runtime-core/src/createRenderer.ts
 function createRenderer(renderOptions2) {
   const {
@@ -723,10 +744,8 @@ function createRenderer(renderOptions2) {
         instance.subTree = subTree;
       }
     };
-    const effect2 = new ReactiveEffect(componentUpdateFn, () => update());
-    const update = instance.update = () => {
-      effect2.run();
-    };
+    const update = instance.update = () => effect2.run();
+    const effect2 = new ReactiveEffect(componentUpdateFn, () => queueJob(update));
     update();
   };
   const processComponent = (n1, n2, container, anchor = null) => {
