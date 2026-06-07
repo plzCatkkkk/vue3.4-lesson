@@ -15,7 +15,7 @@ export function queueJob(job: Function) {
     }
     // 如果当前没有在运行的方法，则执行队列中的任务
     if (!isFlushing) {
-        console.log('queueJob', job);
+        // console.log('queueJob', job);
         isFlushing = true;
         // 开启一个异步任务-微任务-会在宏任务完成后再执行
         resolvePromise.then(() => {
@@ -28,5 +28,7 @@ export function queueJob(job: Function) {
             copy.forEach((job) => job())
             copy.length = 0;
         });
+        // 数据变更发生在宏任务中，组件更新被调度到微任务中执行
+        // 在同一个宏任务中的所有数据变更会被收集起来，然后在微任务阶段统一批量更新
     }
 }

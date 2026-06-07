@@ -273,7 +273,6 @@ function queueJob(job) {
     queue.push(job);
   }
   if (!isFlushing) {
-    console.log("queueJob", job);
     isFlushing = true;
     resolvePromise.then(() => {
       isFlushing = false;
@@ -484,24 +483,46 @@ function createRenderer(renderOptions) {
       patchChildren(n1, n2, container);
     }
   };
-  const mountComponent = (n2, container, anchor = null) => {
+  const initProps = (instance, rawProps) => {
+    const props = {};
+    const attrs = {};
+    const propsOptions = instance.propsOptions;
+    for (let key in rawProps) {
+      let value = rawProps[key];
+      if (key in propsOptions) {
+        props[key] = reactive(value);
+      } else {
+        attrs[key] = value;
+      }
+    }
+    instance.props = reactive(props);
+    instance.attrs = attrs;
+  };
+  const mountComponent = (vnode, container, anchor = null) => {
     const {
       data = () => {
       },
-      render: render2
-    } = n2.type;
+      render: render2,
+      props: propsOptions = {}
+    } = vnode.type;
     const state = reactive(data());
     const instance = {
       state,
-      vnode: n2,
+      vnode,
       // 虚拟节点
       subTree: null,
       // 组件的子树
       isMounted: false,
       // 挂载状态
-      update: null
+      update: null,
       // 更新函数
+      props: {},
+      attrs: {},
+      propsOptions,
+      component: null
     };
+    vnode.component = instance;
+    initProps(instance, vnode.props);
     const componentUpdateFn = () => {
       if (!instance.isMounted) {
         const subTree = render2.call(state, state);

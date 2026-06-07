@@ -12,29 +12,25 @@
       import { render, h, Fragment } from "./runtime-dom.js";
 
       const app = document.getElementById("app");
+      // 所有属性 - propsOptions = attrs
       const VueComponent = {
-        data() {
-          return {
-            name: "plz",
-            age: 22,
-          };
+        props: {  //defineProps
+          name: String,
+          age: Number
         },
-        render() {
-          // 模拟依赖更新
-          setTimeout(() => {
-            this.age++;
-          }, 1000);
+        render(proxy) {
+          // 在生产环境下proxy.$attr是非响应式的，proxy则一直是响应式的
           // this == 组件的实例，内部不会通过类来产生实例
           return h(Fragment,[
-            h("p", `name: ${this.name}`),
-            h("p", `age: ${this.age}`),
+            h("p", `name: ${proxy.attrs.name}`),
+            h("p", `age: ${proxy.attrs.age}`),
           ]);
         },
       }
       // 组件由两个虚拟节点组成 h(VueComponent) = vnode 产生的是组件内的虚拟节点
       // render函数返回的虚拟节点，这个虚拟节点才是最终要渲染的内容 = sunTree
       // 从实现上理解，如果h传如的是对象，那就是要渲染自定义组件
-      render(h(VueComponent), app);
+      render(h(VueComponent, {a:1,b:2, name: 'plz', age: 22}), app);
     </script>
   </body>
 </html>

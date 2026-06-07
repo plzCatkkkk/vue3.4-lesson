@@ -287,22 +287,47 @@ export function createRenderer(renderOptions: any) {
             patchChildren(n1, n2, container)
         }
     };
+    const initProps = (instance: any, rawProps: any) => {
+        const props: any = {}
+        const attrs: any = {}
+        const propsOptions = instance.propsOptions
+        // 遍历所有判断是否在propsOptions中
+        for (let key in rawProps) {
+            let value = rawProps[key]  // String | Number
+            if (key in propsOptions) {
+                props[key] = reactive(value);  // TODO 应该用shallowReactive 暂时没实现
+            } else {
+                attrs[key] = value;
+            }
+        }
+        instance.props = reactive(props);
+        instance.attrs = attrs;
+    }
 
-    const mountComponent = (n2: any, container: any, anchor = null as any) => {
+    const mountComponent = (vnode: any, container: any, anchor = null as any) => {
         // 组件可以基于自己的状态重新渲染 => effect 所以里面要有一个effect
         const {
             data = () => { },
-            render
-        } = n2.type;
+            render,
+            props: propsOptions = {}
+        } = vnode.type;
         const state = reactive(data()) // 组件的状态
         // 实例 - 用来判断是否已经初始化
         const instance = {
             state,
-            vnode: n2, // 虚拟节点
+            vnode, // 虚拟节点
             subTree: null as any, // 组件的子树
             isMounted: false,  // 挂载状态
-            update: null as any // 更新函数
+            update: null as any, // 更新函数
+            props: {},
+            attrs: {},
+            propsOptions,
+            component: null
         }
+        vnode.component = instance;
+        // 组件更新可以直接用vnode.component.subTree.el
+        // TODO 根据propsOptions区分props和attrs
+        initProps(instance, vnode.props)
         const componentUpdateFn = () => {
             // 把this指向当前的state
             // 传第一个用作绑定，传第二个作为显式参数传递给render函数,让 render 函数可以直接通过参数接收到状态对象
@@ -323,6 +348,7 @@ export function createRenderer(renderOptions: any) {
         // ReactiveEffect创建effect并传入更新函数，再包装一层方便修改
         const effect = new ReactiveEffect(componentUpdateFn, () => queueJob(update))
         update();
+
     }
 
     const processComponent = (n1: any, n2: any, container: any, anchor = null as any) => {
