@@ -2,6 +2,9 @@
 function isObject(value) {
   return value !== null && typeof value === "object";
 }
+function isFunction(fn) {
+  return typeof fn === "function";
+}
 function isArray(value) {
   return Array.isArray(value);
 }
@@ -286,6 +289,82 @@ function queueJob(job) {
   }
 }
 
+// packages/runtime-core/src/component.ts
+function createComponentInstance(vnode) {
+  const instance = {
+    data: null,
+    vnode,
+    // 虚拟节点
+    subTree: null,
+    // 组件的子树
+    isMounted: false,
+    // 挂载状态
+    update: null,
+    // 更新函数
+    props: {},
+    attrs: {},
+    propsOptions: vnode.type.props,
+    component: null,
+    proxy: null,
+    //用来代理props,sttrs,data 方便使用,
+    render: null
+  };
+  return instance;
+}
+var initProps = (instance, rawProps) => {
+  const props = {};
+  const attrs = {};
+  const propsOptions = instance.propsOptions;
+  for (let key in rawProps) {
+    let value = rawProps[key];
+    if (key in propsOptions) {
+      props[key] = reactive(value);
+    } else {
+      attrs[key] = value;
+    }
+  }
+  instance.props = reactive(props);
+  instance.attrs = attrs;
+};
+var publicProperty = {
+  $attrs: (instance) => instance.attrs
+};
+var handler = {
+  get(target, key) {
+    const { data, props } = target;
+    if (data && hasOwn(data, key)) {
+      return data[key];
+    } else if (props && hasOwn(props, key)) {
+      return props[key];
+    }
+    const getter = publicProperty[key];
+    if (getter)
+      return getter(target);
+  },
+  set(target, key, value) {
+    const { data, props } = target;
+    if (data && hasOwn(data, key)) {
+      data[key] = value;
+    } else if (props && hasOwn(props, key)) {
+      props[key] = value;
+      console.warn("props are readonly");
+      return false;
+    }
+    return true;
+  }
+};
+function setupComponent(instance) {
+  const { vnode } = instance;
+  initProps(instance, vnode.props);
+  instance.proxy = new Proxy(instance, handler);
+  const { data = () => {
+  }, render } = vnode.type;
+  if (!isFunction(data))
+    return console.warn("data must be a function");
+  instance.data = reactive(data.call(instance.proxy));
+  instance.render = render;
+}
+
 // packages/runtime-core/src/createRenderer.ts
 function createRenderer(renderOptions) {
   const {
@@ -485,83 +564,15 @@ function createRenderer(renderOptions) {
       patchChildren(n1, n2, container);
     }
   };
-  const initProps = (instance, rawProps) => {
-    const props = {};
-    const attrs = {};
-    const propsOptions = instance.propsOptions;
-    for (let key in rawProps) {
-      let value = rawProps[key];
-      if (key in propsOptions) {
-        props[key] = reactive(value);
-      } else {
-        attrs[key] = value;
-      }
-    }
-    instance.props = reactive(props);
-    instance.attrs = attrs;
-  };
-  const mountComponent = (vnode, container, anchor = null) => {
-    const {
-      data = () => {
-      },
-      render: render2,
-      props: propsOptions = {}
-    } = vnode.type;
-    const state = reactive(data());
-    const instance = {
-      state,
-      vnode,
-      // 虚拟节点
-      subTree: null,
-      // 组件的子树
-      isMounted: false,
-      // 挂载状态
-      update: null,
-      // 更新函数
-      props: {},
-      attrs: {},
-      propsOptions,
-      component: null,
-      proxy: null
-      //用来代理props,sttrs,data 方便使用
-    };
-    vnode.component = instance;
-    initProps(instance, vnode.props);
-    const publicProperty = {
-      $attrs: (instance2) => instance2.attrs
-    };
-    instance.proxy = new Proxy(instance, {
-      get(target, key) {
-        const { state: state2, props } = target;
-        if (state2 && hasOwn(state2, key)) {
-          return state2[key];
-        } else if (props && hasOwn(props, key)) {
-          return props[key];
-        }
-        const getter = publicProperty[key];
-        if (getter)
-          return getter(target);
-      },
-      set(target, key, value) {
-        const { state: state2, props } = target;
-        if (state2 && hasOwn(state2, key)) {
-          state2[key] = value;
-        } else if (props && hasOwn(props, key)) {
-          props[key] = value;
-          console.warn("props are readonly");
-          return false;
-        }
-        return true;
-      }
-    });
+  function setupRenderEffect(instance, container, anchor = null) {
     const componentUpdateFn = () => {
       if (!instance.isMounted) {
-        const subTree = render2.call(instance.proxy, instance.proxy);
+        const subTree = instance.render.call(instance.proxy, instance.proxy);
         instance.subTree = subTree;
         patch(null, subTree, container, anchor);
         instance.isMounted = true;
       } else {
-        const subTree = render2.call(instance.proxy, instance.proxy);
+        const subTree = instance.render.call(instance.proxy, instance.proxy);
         patch(instance.subTree, subTree, container, anchor);
         instance.subTree = subTree;
       }
@@ -569,6 +580,11 @@ function createRenderer(renderOptions) {
     const update = instance.update = () => effect.run();
     const effect = new ReactiveEffect(componentUpdateFn, () => queueJob(update));
     update();
+  }
+  const mountComponent = (vnode, container, anchor = null) => {
+    const instance = vnode.component = createComponentInstance(vnode);
+    setupComponent(instance);
+    setupRenderEffect(instance, container, anchor);
   };
   const processComponent = (n1, n2, container, anchor = null) => {
     if (n1 === null) {

@@ -3,6 +3,7 @@ import { Fragment, Text, isSameVnode } from "./createVnode";
 import { getSequence } from "./getSequence";
 import { ReactiveEffect, reactive } from "@zvue/reactivity";
 import { queueJob } from "./scheduler";
+import { createComponentInstance, setupComponent } from "./component";
 
 // 产生的render方法采用dom api进行渲染
 export function createRenderer(renderOptions: any) {
@@ -287,92 +288,19 @@ export function createRenderer(renderOptions: any) {
             patchChildren(n1, n2, container)
         }
     };
-    const initProps = (instance: any, rawProps: any) => {
-        const props: any = {}
-        const attrs: any = {}
-        const propsOptions = instance.propsOptions
-        // 遍历所有判断是否在propsOptions中
-        for (let key in rawProps) {
-            let value = rawProps[key]  // String | Number
-            if (key in propsOptions) {
-                props[key] = reactive(value);  // TODO 应该用shallowReactive 暂时没实现
-            } else {
-                attrs[key] = value;
-            }
-        }
-        instance.props = reactive(props);
-        instance.attrs = attrs;
-    }
 
-    const mountComponent = (vnode: any, container: any, anchor = null as any) => {
-        // 组件可以基于自己的状态重新渲染 => effect 所以里面要有一个effect
-        const {
-            data = () => { },
-            render,
-            props: propsOptions = {}
-        } = vnode.type;
-        const state = reactive(data()) // 组件的状态
-        // 实例 - 用来判断是否已经初始化
-        const instance = {
-            state,
-            vnode, // 虚拟节点
-            subTree: null as any, // 组件的子树
-            isMounted: false,  // 挂载状态
-            update: null as any, // 更新函数
-            props: {} as any,
-            attrs: {} as any,
-            propsOptions,
-            component: null,
-            proxy: null as any  //用来代理props,sttrs,data 方便使用
-        }
-        vnode.component = instance;
-        // 组件更新可以直接用vnode.component.subTree.el
-        // TODO 根据propsOptions区分props和attrs
-        initProps(instance, vnode.props)
-
-        const publicProperty: any = {
-            $attrs: (instance: any) => instance.attrs
-        }
-        // 组件的代理对象
-        instance.proxy = new Proxy(instance, {
-            get(target, key) {
-                // $attrs 暂不考虑
-                const { state, props } = target;
-                // Proxy.name -> state.name 
-                // 判断state有没有属性，有的话代理到state
-                if (state && hasOwn(state, key)) {
-                    return state[key];
-                } else if (props && hasOwn(props, key)) {
-                    return props[key];
-                }
-                // 对于一些无法修改的属性 $slot $attrs
-                const getter = publicProperty[key];
-                if (getter) return getter(target);
-            },
-            set(target, key, value) {
-                const { state, props } = target;
-                if (state && hasOwn(state, key)) {
-                    state[key] = value;
-                } else if (props && hasOwn(props, key)) {
-                    props[key] = value;
-                    // 这个不能改，不合法
-                    console.warn('props are readonly')
-                    return false
-                }
-                return true;
-            }
-        })
+    function setupRenderEffect(instance: any, container: any, anchor = null as any) {
         const componentUpdateFn = () => {
             // 把this指向当前的state
             // 传第一个用作绑定，传第二个作为显式参数传递给render函数,让 render 函数可以直接通过参数接收到状态对象
             // TODO 需要判断是初始化还是更新，否则会一直插入节点
             if (!instance.isMounted) {
-                const subTree = render.call(instance.proxy, instance.proxy)
+                const subTree = instance.render.call(instance.proxy, instance.proxy)
                 instance.subTree = subTree
                 patch(null, subTree, container, anchor);
                 instance.isMounted = true
             } else {
-                const subTree = render.call(instance.proxy, instance.proxy)
+                const subTree = instance.render.call(instance.proxy, instance.proxy)
                 patch(instance.subTree, subTree, container, anchor);
                 instance.subTree = subTree
             }
@@ -382,6 +310,17 @@ export function createRenderer(renderOptions: any) {
         // ReactiveEffect创建effect并传入更新函数，再包装一层方便修改
         const effect = new ReactiveEffect(componentUpdateFn, () => queueJob(update))
         update();
+    }
+
+
+    const mountComponent = (vnode: any, container: any, anchor = null as any) => {
+        // 组件可以基于自己的状态重新渲染 => effect 所以里面要有一个effect
+        // 组件更新可以直接用vnode.component.subTree.el
+        const instance = vnode.component = createComponentInstance(vnode);
+        // 启动，赋值
+        setupComponent(instance);
+        // 创建effect
+        setupRenderEffect(instance, container, anchor)
     }
 
     const processComponent = (n1: any, n2: any, container: any, anchor = null as any) => {
