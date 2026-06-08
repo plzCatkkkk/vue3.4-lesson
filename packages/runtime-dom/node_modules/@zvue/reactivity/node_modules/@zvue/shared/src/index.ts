@@ -14,4 +14,8 @@ export function isString(value: any) {
     return typeof value === 'string';
 }
 
+// 判断对象是否有属性-反柯里化
+const hasOwnProperty = Object.prototype.hasOwnProperty;
+export const hasOwn = (value: any, key: any) => hasOwnProperty.call(value, key);;
+
 export * from './shapeFlags'

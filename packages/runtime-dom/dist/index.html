@@ -22,8 +22,8 @@
           // 在生产环境下proxy.$attr是非响应式的，proxy则一直是响应式的
           // this == 组件的实例，内部不会通过类来产生实例
           return h(Fragment,[
-            h("p", `name: ${proxy.attrs.name}`),
-            h("p", `age: ${proxy.attrs.age}`),
+            h("p", `name: ${proxy.name}`),
+            h("p", `age: ${proxy.age}`),
           ]);
         },
       }
