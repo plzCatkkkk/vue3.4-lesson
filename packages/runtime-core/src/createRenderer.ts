@@ -288,6 +288,12 @@ export function createRenderer(renderOptions: any) {
         }
     };
 
+    const updateComponentPreRender = (instance: any, next: any) => {
+        instance.next = null;
+        instance.vnode = next;
+        updateProps(instance, instance.props, next.props)
+    }
+
     function setupRenderEffect(instance: any, container: any, anchor = null as any) {
         const componentUpdateFn = () => {
             // 把this指向当前的state
@@ -299,6 +305,13 @@ export function createRenderer(renderOptions: any) {
                 patch(null, subTree, container, anchor);
                 instance.isMounted = true
             } else {
+                const { next } = instance
+                if (next) {
+                    // 更新属性的插槽
+                    next.el = instance.subTree.el
+                    updateComponentPreRender(instance, next)
+                }
+                // 基于组件状态的更新
                 const subTree = instance.render.call(instance.proxy, instance.proxy)
                 patch(instance.subTree, subTree, container, anchor);
                 instance.subTree = subTree
@@ -347,10 +360,28 @@ export function createRenderer(renderOptions: any) {
             }
         }
     };
+    const shouldUpdateComponent = (n1: any, n2: any) => {
+        const { props: prevProps, children: prevChildren } = n1;
+        const { props: nextProps, children: nextChildren } = n2;
+        if (prevChildren || nextChildren) {
+            return true;  // 有插槽重新渲染
+        }
+        // 属性一致
+        if (prevProps === nextProps) {
+            return false;
+        }
+        // 属性不一致
+        return hasChangeProps(nextProps, prevProps)
+    };
+
 
     // 这个在vue2中是分开写的，3.2后放在setupRenderEffect中统一处理
     const updateComponent = (n1: any, n2: any) => {
         const instance = n2.component = n1.component;  //复用
+        if (shouldUpdateComponent(n1, n2)) {
+            instance.next = n2; // 调用update,如果有next属性，说明是属性props或插槽更新
+            instance.update();  // 统一更新
+        }
         // 比较差异
         const { props: prevProps } = n1;
         const { props: nextProps } = n2;
