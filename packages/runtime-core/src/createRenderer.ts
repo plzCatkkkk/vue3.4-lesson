@@ -182,7 +182,6 @@ export function createRenderer(renderOptions: any) {
                 let anchor = c2[newtIndex + 1]?.el;  // 当前参照物 f
                 // console.log(c2[newtIndex]);
                 let vnode = c2[newtIndex];
-                // debugger;
                 // 可能新的比老的多，需要额外创建
                 if (!vnode.el) {  // 新列表中新增的元素
                     patch(null, vnode, el, anchor);  //创建 h 插入
@@ -322,13 +321,52 @@ export function createRenderer(renderOptions: any) {
         // 创建effect
         setupRenderEffect(instance, container, anchor)
     }
+    const hasChangeProps = (prevProps: any, nextProps: any) => {
+        // 先比长度
+        if (Object.keys(nextProps).length !== Object.keys(prevProps).length) {
+            return true;
+        }
+        // 再一一对应
+        for (const key in nextProps) {
+            if (nextProps[key] !== prevProps[key]) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    const updateProps = (instance: any, nextProps: any, prevProps: any) => {
+        if (hasChangeProps(nextProps, prevProps)) {
+            for (const key in nextProps) {
+                instance.props[key] = nextProps[key];
+            }
+            for (const key in instance.props) {
+                if (!(key in nextProps)) {
+                    delete instance.props[key];
+                }
+            }
+        }
+    };
+
+    // 这个在vue2中是分开写的，3.2后放在setupRenderEffect中统一处理
+    const updateComponent = (n1: any, n2: any) => {
+        const instance = n2.component = n1.component;  //复用
+        // 比较差异
+        const { props: prevProps } = n1;
+        const { props: nextProps } = n2;
+        // TODO 更新，可以通过状态、属性props、插槽更新组件
+        // 状态更新已在setupRenderEffect实现
+        // 属性props更新
+        updateProps(instance, nextProps, prevProps);
+    }
 
     const processComponent = (n1: any, n2: any, container: any, anchor = null as any) => {
         if (n1 === null) {
             // 初始化挂载
             mountComponent(n2, container, anchor);
         } else {
-            // 更新
+            // 通过属性
+            updateComponent(n1, n2);
         }
     }
 

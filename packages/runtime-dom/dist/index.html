@@ -9,28 +9,37 @@
     <div id="app"></div>
     <script type="module">
       // import { render, h, Fragment } from "/node_modules/@vue/runtime-dom/dist/runtime-dom.esm-browser.js";
-      import { render, h, Fragment } from "./runtime-dom.js";
-
+      import { render, h, Fragment, Text } from "./runtime-dom.js";
       const app = document.getElementById("app");
-      // 所有属性 - propsOptions = attrs
-      const VueComponent = {
-        props: {  //defineProps
-          name: String,
-          age: Number
+
+      const VueComponent2 = {
+        props: {
+          address: String,
         },
         render(proxy) {
-          // 在生产环境下proxy.$attr是非响应式的，proxy则一直是响应式的
-          // this == 组件的实例，内部不会通过类来产生实例
-          return h(Fragment,[
-            h("p", `name: ${proxy.name}`),
-            h("p", `age: ${proxy.age}`),
+          return h(Fragment, [h(Text, proxy.address)]);
+        },
+      };
+
+      const VueComponent = {
+        data() {
+          return { flag: true };
+        },
+        render() {
+          return h(Fragment, [
+            h(
+              "button",
+              {
+                onClick: () => (this.flag = !this.flag),
+              },
+              "切换",
+            ),
+            h(VueComponent2, { address: this.flag ? "上海" : "北京" }),
           ]);
         },
-      }
-      // 组件由两个虚拟节点组成 h(VueComponent) = vnode 产生的是组件内的虚拟节点
-      // render函数返回的虚拟节点，这个虚拟节点才是最终要渲染的内容 = sunTree
-      // 从实现上理解，如果h传如的是对象，那就是要渲染自定义组件
-      render(h(VueComponent, {a:1,b:2, name: 'plz', age: 22}), app);
+      };
+
+      render(h(VueComponent), app);
     </script>
   </body>
 </html>

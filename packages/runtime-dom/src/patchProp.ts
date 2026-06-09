@@ -11,7 +11,7 @@ export default function patchProp(el: any, key: any, prevValue: any, nextValue: 
     } else if (key === 'style') {
         //更新样式
         patchStyle(el, prevValue, nextValue);
-    } else if (/^on[a-z]/.test(key)) {
+    } else if (/^on[A-Za-z]/.test(key)) {
         // 绑定事件--可能有多个事件
         patchEvent(el, key, nextValue);
     } else {
