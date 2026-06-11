@@ -126,8 +126,8 @@ export function trackEffect(effect: any, dep: any) {
     // 所以同一次effect执行的get(effect)，_trackId不变，所以不会重复收集
     // 下一次执行effect因为preCleanEffect时，_trackId++，所以会重新收集
     // console.log(dep.get(effect), effect._trackId)
-    // debugger;
     // 简易diff
+
     if (dep.get(effect) !== effect._trackId) {
         dep.set(effect, effect._trackId) //更新id
         let oldDep = effect.deps[effect._depsLength]

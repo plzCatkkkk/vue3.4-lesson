@@ -14,7 +14,7 @@ function createRef(value: any) {
 export class RefImpl {
     public _value: any;
     public __v_isRef = true;  //添加ref标识
-    public dep = [] // 用于收集对应effect
+    public dep: any = undefined; // 用于收集对应effect，初始为undefined
     constructor(public rawValue: any) {
         this._value = toReactive(rawValue);
     }
@@ -25,7 +25,7 @@ export class RefImpl {
     set value(newValue) {
         if (newValue !== this.rawValue) {
             this.rawValue = newValue;
-            this._value = newValue;
+            this._value = toReactive(newValue);
             triggerRefValue(this);
         }
     }

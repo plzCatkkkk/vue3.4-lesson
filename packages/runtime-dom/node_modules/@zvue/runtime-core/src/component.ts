@@ -1,4 +1,4 @@
-import { reactive } from "@zvue/reactivity";
+import { proxyRefs, reactive } from "@zvue/reactivity";
 import { hasOwn, isFunction } from "@zvue/shared";
 
 export function createComponentInstance(vnode: any) {
@@ -15,7 +15,8 @@ export function createComponentInstance(vnode: any) {
         propsOptions: vnode.type.props,
         component: null as any,
         proxy: null as any,  //用来代理props,sttrs,data 方便使用,
-        render: null as any
+        render: null as any,
+        setupState: {},
     }
     return instance;
 }
@@ -44,20 +45,22 @@ const publicProperty: any = {
 const handler = {
     get(target: any, key: any) {
         // $attrs 暂不考虑
-        const { data, props } = target;
+        const { data, props, setupState } = target;
         // Proxy.name -> data.name 
         // 判断data有没有属性，有的话代理到data
         if (data && hasOwn(data, key)) {
             return data[key];
         } else if (props && hasOwn(props, key)) {
             return props[key];
+        } else if (setupState && hasOwn(setupState, key)) {
+            return setupState[key];
         }
         // 对于一些无法修改的属性 $slot $attrs
         const getter = publicProperty[key];
         if (getter) return getter(target);
     },
     set(target: any, key: any, value: any) {
-        const { data, props } = target;
+        const { data, props, setupState } = target;
         if (data && hasOwn(data, key)) {
             data[key] = value;
         } else if (props && hasOwn(props, key)) {
@@ -65,6 +68,8 @@ const handler = {
             // 这个不能改，不合法
             console.warn('props are readonly')
             return false
+        } else if (setupState && hasOwn(setupState, key)) {
+            setupState[key] = value;
         }
         return true;
     }
@@ -76,10 +81,29 @@ export function setupComponent(instance: any) {
     initProps(instance, vnode.props)
     // 赋值代理对象
     instance.proxy = new Proxy(instance, handler)
-    const { data = () => { }, render } = vnode.type;
-    if (!isFunction(data)) return console.warn('data must be a function')
-    // data中可以拿到props
-    instance.data = reactive(data.call(instance.proxy)) // 组件的状态
+    const { data = () => { }, render, setup } = vnode.type;
+    if (setup) {
+        const ssetupContext = {
+            attrs: {},
+            slots: {},
+            emit: () => { }
+        }
+        const setupResult = setup(instance.props, ssetupContext)
+        if (isFunction(setupResult)) {
+            instance.render = setupResult
+        } else {
+            instance.setupState = proxyRefs(setupResult)  //将返回的值做脱ref
+        }
+    }
+
+    if (!isFunction(data)) {
+        console.warn('data must be a function')
+    } else {
+        // data中可以拿到props
+        instance.data = reactive(data.call(instance.proxy)) // 组件的状态
+    }
     // render函数挂载
-    instance.render = render;
+    if (!instance.render) {
+        instance.render = render;
+    }
 }

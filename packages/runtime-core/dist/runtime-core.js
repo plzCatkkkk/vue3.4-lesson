@@ -269,6 +269,25 @@ function reactive(target) {
   return createReactiveObject(target);
 }
 
+// packages/reactivity/src/ref.ts
+function proxyRefs(objectWithRef) {
+  return new Proxy(objectWithRef, {
+    get(target, key, receiver) {
+      let r = Reflect.get(target, key, receiver);
+      return r.__v_isRef ? r.value : r;
+    },
+    set(target, key, value, receiver) {
+      const oldValue = target[key];
+      if (oldValue.__v_isRef) {
+        oldValue.value = value;
+        return true;
+      } else {
+        return Reflect.set(target, key, value, receiver);
+      }
+    }
+  });
+}
+
 // packages/runtime-core/src/scheduler.ts
 var queue = [];
 var isFlushing = false;
@@ -307,7 +326,8 @@ function createComponentInstance(vnode) {
     component: null,
     proxy: null,
     //用来代理props,sttrs,data 方便使用,
-    render: null
+    render: null,
+    setupState: {}
   };
   return instance;
 }
@@ -331,24 +351,28 @@ var publicProperty = {
 };
 var handler = {
   get(target, key) {
-    const { data, props } = target;
+    const { data, props, setupState } = target;
     if (data && hasOwn(data, key)) {
       return data[key];
     } else if (props && hasOwn(props, key)) {
       return props[key];
+    } else if (setupState && hasOwn(setupState, key)) {
+      return setupState[key];
     }
     const getter = publicProperty[key];
     if (getter)
       return getter(target);
   },
   set(target, key, value) {
-    const { data, props } = target;
+    const { data, props, setupState } = target;
     if (data && hasOwn(data, key)) {
       data[key] = value;
     } else if (props && hasOwn(props, key)) {
       props[key] = value;
       console.warn("props are readonly");
       return false;
+    } else if (setupState && hasOwn(setupState, key)) {
+      setupState[key] = value;
     }
     return true;
   }
@@ -358,11 +382,29 @@ function setupComponent(instance) {
   initProps(instance, vnode.props);
   instance.proxy = new Proxy(instance, handler);
   const { data = () => {
-  }, render } = vnode.type;
-  if (!isFunction(data))
-    return console.warn("data must be a function");
-  instance.data = reactive(data.call(instance.proxy));
-  instance.render = render;
+  }, render, setup } = vnode.type;
+  if (setup) {
+    const ssetupContext = {
+      attrs: {},
+      slots: {},
+      emit: () => {
+      }
+    };
+    const setupResult = setup(instance.props, ssetupContext);
+    if (isFunction(setupResult)) {
+      instance.render = setupResult;
+    } else {
+      instance.setupState = proxyRefs(setupResult);
+    }
+  }
+  if (!isFunction(data)) {
+    console.warn("data must be a function");
+  } else {
+    instance.data = reactive(data.call(instance.proxy));
+  }
+  if (!instance.render) {
+    instance.render = render;
+  }
 }
 
 // packages/runtime-core/src/createRenderer.ts
